@@ -21,7 +21,7 @@ class SortableLink
      */
     public static function render(array $parameters)
     {
-        list($sortColumn, $sortParameter, $title, $queryParameters, $anchorAttributes) = self::parseParameters($parameters);
+        list($sortColumn, $sortParameter, $title, $queryParameters, $anchorAttributes, $fragment) = self::parseParameters($parameters);
 
         $title = self::applyFormatting($title, $sortColumn);
 
@@ -39,7 +39,7 @@ class SortableLink
 
         $queryString = self::buildQueryString($queryParameters, $sortParameter, $direction);
 
-        $url = self::buildUrl($queryString, $anchorAttributes);
+        $url = self::buildUrl($queryString, $anchorAttributes, $fragment);
 
         return '<a'.$anchorClass.' href="'.$url.'"'.$anchorAttributesString.'>'.e($title).$trailingTag;
     }
@@ -60,8 +60,9 @@ class SortableLink
         $title            = (count($parameters) === 1) ? null : $parameters[1];
         $queryParameters  = (isset($parameters[2]) && is_array($parameters[2])) ? $parameters[2] : [];
         $anchorAttributes = (isset($parameters[3]) && is_array($parameters[3])) ? $parameters[3] : [];
+        $fragment         = (isset($parameters[4]) ? $parameters[4] : '';
 
-        return [$sortColumn, $parameters[0], $title, $queryParameters, $anchorAttributes];
+        return [$sortColumn, $parameters[0], $title, $queryParameters, $anchorAttributes, $fragment];
     }
 
 
@@ -277,15 +278,15 @@ class SortableLink
         return ' '.implode(' ', $attributes);
     }
 
-    private static function buildUrl($queryString, $anchorAttributes)
+    private static function buildUrl($queryString, $anchorAttributes, $fragment)
     {
         if(!isset($anchorAttributes['href']))
         {
-            return url(request()->path() . "?" . $queryString);
+            return url(request()->path() . "?" . $queryString. $fragment);
         }
         else
         {
-            return url($anchorAttributes['href'] . "?" . $queryString);
+            return url($anchorAttributes['href'] . "?" . $queryString. $fragment);
         }
     }
 
