@@ -60,7 +60,7 @@ class SortableLink
         $title            = (count($parameters) === 1) ? null : $parameters[1];
         $queryParameters  = (isset($parameters[2]) && is_array($parameters[2])) ? $parameters[2] : [];
         $anchorAttributes = (isset($parameters[3]) && is_array($parameters[3])) ? $parameters[3] : [];
-        $fragment         = (isset($parameters[4])) ? $parameters[4] : '';
+        $fragment         = (isset($parameters[4])) ? '#'. $parameters[4] : '';
 
         return [$sortColumn, $parameters[0], $title, $queryParameters, $anchorAttributes, $fragment];
     }
