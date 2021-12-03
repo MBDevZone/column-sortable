@@ -15,18 +15,28 @@ use Kyslik\ColumnSortable\Exceptions\ColumnSortableException;
  */
 trait Sortable
 {
+    /**
+     * The table name of this sorting
+     *
+     * @var string
+     */
+    private $sortTableName;
 
     /**
      * @param \Illuminate\Database\Query\Builder $query
      * @param array|null                         $defaultParameters
+     * @param string|null                        $tableName
      *
      * @return \Illuminate\Database\Query\Builder
      * @throws \Kyslik\ColumnSortable\Exceptions\ColumnSortableException
      */
-    public function scopeSortable($query, $defaultParameters = null)
+    public function scopeSortable($query, $defaultParameters = null, $tableName = null)
     {
+        if ($tableName !== null)
+            $this->sortTableName = $tableName;
+
         if (request()->allFilled(['sort', 'direction'])) { // allFilled() is macro
-            return $this->queryOrderBuilder($query, request()->only(['sort', 'direction']));
+            return $this->queryOrderBuilder($query, request()->only(['sort', 'direction', 'table']));
         }
 
         if (is_null($defaultParameters)) {
@@ -76,7 +86,11 @@ trait Sortable
     {
         $model = $this;
 
-        list($column, $direction) = $this->parseParameters($sortParameters);
+        list($column, $direction, $table) = $this->parseParameters($sortParameters);
+
+        if ($table !== null && $table !== $this->sortTableName) {
+            return $query;
+        }
 
         if (is_null($column)) {
             return $query;
@@ -131,7 +145,11 @@ trait Sortable
             $direction = config('columnsortable.default_direction', 'asc');
         }
 
-        return [$column, $direction];
+        $table = Arr::get($parameters, 'table', null);
+        if ($table !== null && (!is_string($table) || strlen($table) > 30))
+            $table = null;
+
+        return [$column, $direction, $table];
     }
 
 
