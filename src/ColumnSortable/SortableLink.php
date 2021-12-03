@@ -21,7 +21,7 @@ class SortableLink
      */
     public static function render(array $parameters)
     {
-        list($sortColumn, $sortParameter, $title, $queryParameters, $anchorAttributes, $fragment) = self::parseParameters($parameters);
+        list($sortColumn, $sortParameter, $title, $queryParameters, $anchorAttributes, $tableName) = self::parseParameters($parameters);
 
         $title = self::applyFormatting($title, $sortColumn);
 
@@ -29,7 +29,7 @@ class SortableLink
             request()->merge([$mergeTitleAs => $title]);
         }
 
-        list($icon, $direction) = self::determineDirection($sortColumn, $sortParameter);
+        list($icon, $direction) = self::determineDirection($sortColumn, $sortParameter, $tableName);
 
         $trailingTag = self::formTrailingTag($icon);
 
@@ -37,9 +37,9 @@ class SortableLink
 
         $anchorAttributesString = self::buildAnchorAttributesString($anchorAttributes);
 
-        $queryString = self::buildQueryString($queryParameters, $sortParameter, $direction);
+        $queryString = self::buildQueryString($queryParameters, $sortParameter, $direction, $tableName);
 
-        $url = self::buildUrl($queryString, $anchorAttributes, $fragment);
+        $url = self::buildUrl($queryString, $anchorAttributes);
 
         return '<a'.$anchorClass.' href="'.$url.'"'.$anchorAttributesString.'>'.e($title).$trailingTag;
     }
@@ -60,9 +60,9 @@ class SortableLink
         $title            = (count($parameters) === 1) ? null : $parameters[1];
         $queryParameters  = (isset($parameters[2]) && is_array($parameters[2])) ? $parameters[2] : [];
         $anchorAttributes = (isset($parameters[3]) && is_array($parameters[3])) ? $parameters[3] : [];
-        $fragment         = (isset($parameters[4])) ? '#'. $parameters[4] : '';
+        $tableName        = (isset($parameters[4])) ? $parameters[4] : null;
 
-        return [$sortColumn, $parameters[0], $title, $queryParameters, $anchorAttributes, $fragment];
+        return [$sortColumn, $parameters[0], $title, $queryParameters, $anchorAttributes, $tableName];
     }
 
 
@@ -123,14 +123,18 @@ class SortableLink
     /**
      * @param $sortColumn
      * @param $sortParameter
+     * @param $tableName
      *
      * @return array
      */
-    private static function determineDirection($sortColumn, $sortParameter)
+    private static function determineDirection($sortColumn, $sortParameter, $tableName)
     {
-        $icon = self::selectIcon($sortColumn);
+        $icon = self::selectIcon($sortColumn); 
+        $table = request()->get('table');
+        if ($table !== null && (!is_string($table) || strlen($table) > 30))
+            $table = null;
 
-        if (request()->get('sort') == $sortParameter && in_array(request()->get('direction'), ['asc', 'desc'])) {
+        if (($table === null || $table === $tableName) && request()->get('sort') == $sortParameter && in_array(request()->get('direction'), ['asc', 'desc'])) {
             $icon      .= (request()->get('direction') === 'asc' ? config('columnsortable.asc_suffix', '-asc') :
                 config('columnsortable.desc_suffix', '-desc'));
             $direction = request()->get('direction') === 'desc' ? 'asc' : 'desc';
@@ -243,20 +247,26 @@ class SortableLink
      * @param $queryParameters
      * @param $sortParameter
      * @param $direction
+     * @param $tableName
      *
      * @return string
      */
-    private static function buildQueryString($queryParameters, $sortParameter, $direction)
+    private static function buildQueryString($queryParameters, $sortParameter, $direction, $tableName)
     {
         $checkStrlenOrArray = function ($element) {
             return is_array($element) ? $element : strlen($element);
         };
 
-        $persistParameters = array_filter(request()->except('sort', 'direction', 'page'), $checkStrlenOrArray);
-        $queryString       = http_build_query(array_merge($persistParameters, $queryParameters, [
+        $newParams = [
             'sort'      => $sortParameter,
-            'direction' => $direction,
-        ]));
+            'direction' => $direction
+        ];
+
+        if ($tableName !== null)
+            $newParams['table'] = $tableName;
+
+        $persistParameters = array_filter(request()->except('sort', 'direction', 'page'), $checkStrlenOrArray);
+        $queryString       = http_build_query(array_merge($persistParameters, $queryParameters, $newParams));
 
         return $queryString;
     }
@@ -278,15 +288,15 @@ class SortableLink
         return ' '.implode(' ', $attributes);
     }
 
-    private static function buildUrl($queryString, $anchorAttributes, $fragment)
+    private static function buildUrl($queryString, $anchorAttributes)
     {
         if(!isset($anchorAttributes['href']))
         {
-            return url(request()->path() . "?" . $queryString. $fragment);
+            return url(request()->path() . "?" . $queryString);
         }
         else
         {
-            return url($anchorAttributes['href'] . "?" . $queryString. $fragment);
+            return url($anchorAttributes['href'] . "?" . $queryString);
         }
     }
 
