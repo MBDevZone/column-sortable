@@ -45,6 +45,7 @@ trait Sortable
 
         if ( ! is_null($defaultParameters)) {
             $defaultSortArray = $this->formatToParameters($defaultParameters);
+
             if (config('columnsortable.allow_request_modification', true) && ! empty($defaultSortArray)) {
                 request()->merge($defaultSortArray);
             }
@@ -137,7 +138,7 @@ trait Sortable
     {
         $column = Arr::get($parameters, 'sort');
         if (empty($column)) {
-            return [null, null];
+            return [null, null, null];
         }
 
         $direction = Arr::get($parameters, 'direction', []);
@@ -216,10 +217,11 @@ trait Sortable
             return ['sort' => $array, 'direction' => $defaultDirection];
         }
 
-        return (key($array) === 0) ? ['sort' => $array[0], 'direction' => $defaultDirection] : [
+        return ['sort' => $array['sort'], 'direction' => $array['direction']];
+        /*return (key($array) === 0) ? ['sort' => $array[0], 'direction' => $defaultDirection] : [
             'sort'      => key($array),
             'direction' => reset($array),
-        ];
+        ];*/
     }
 
 
