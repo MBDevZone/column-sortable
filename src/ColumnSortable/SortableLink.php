@@ -21,7 +21,7 @@ class SortableLink
      */
     public static function render(array $parameters)
     {
-        list($sortColumn, $sortParameter, $title, $queryParameters, $anchorAttributes, $tableName) = self::parseParameters($parameters);
+        list($sortColumn, $sortParameter, $title, $queryParameters, $anchorAttributes, $tableName, $livewire) = self::parseParameters($parameters);
 
         $title = self::applyFormatting($title, $sortColumn);
 
@@ -38,10 +38,15 @@ class SortableLink
         $anchorAttributesString = self::buildAnchorAttributesString($anchorAttributes);
 
         $queryString = self::buildQueryString($queryParameters, $sortParameter, $direction, $tableName);
-
+ 
         $url = self::buildUrl($queryString, $anchorAttributes);
 
-        return '<a'.$anchorClass.' href="'.$url.'"'.$anchorAttributesString.'>'.e($title).$trailingTag;
+        $lw = '';
+        if ($livewire) {
+            $lw = " wire:click.prevent=\"setSorting('$sortColumn', '$direction')\"";
+        }
+
+        return '<a'.$anchorClass.' href="'.$url.'"'.$anchorAttributesString. $lw. '>'.e($title).$trailingTag;
     }
 
 
@@ -61,8 +66,9 @@ class SortableLink
         $queryParameters  = (isset($parameters[2]) && is_array($parameters[2])) ? $parameters[2] : [];
         $anchorAttributes = (isset($parameters[3]) && is_array($parameters[3])) ? $parameters[3] : [];
         $tableName        = (isset($parameters[4])) ? $parameters[4] : null;
+        $livewire         = (isset($parameters[5]) && is_bool($parameters[5])) ? $parameters[5] : false;
 
-        return [$sortColumn, $parameters[0], $title, $queryParameters, $anchorAttributes, $tableName];
+        return [$sortColumn, $parameters[0], $title, $queryParameters, $anchorAttributes, $tableName, $livewire];
     }
 
 
