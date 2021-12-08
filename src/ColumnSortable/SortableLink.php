@@ -43,7 +43,7 @@ class SortableLink
 
         $lw = '';
         if ($livewire) {
-            $lw = " x-on:click=\"changeSorting('$sortColumn', '$direction', '$tableName')\" wire:click.prevent=\"setSorting('$sortColumn', '$direction')\"";
+            $lw = " x-on:click=\"Helper.changeSorting('$sortColumn', '$direction', '$tableName')\" wire:click.prevent=\"setSorting('$sortColumn', '$direction')\"";
         }
 
         return '<a'.$anchorClass.' href="'.$url.'"'.$anchorAttributesString. $lw. '>'.e($title).$trailingTag;
